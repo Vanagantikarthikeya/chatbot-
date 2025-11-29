@@ -1,0 +1,9 @@
+{
+  "name": "Neural Nexus AI",
+  "description": "A unified, multimodal AI assistant featuring a neuron-inspired interface. Integrates deep reasoning, live voice interaction, real-time search grounding, and image generation.",
+  "requestFramePermissions": [
+    "camera",
+    "microphone",
+    "geolocation"
+  ]
+}

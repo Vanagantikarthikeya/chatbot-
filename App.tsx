@@ -1,0 +1,138 @@
+import React, { useState } from 'react';
+import NeuronBackground from './components/NeuronBackground';
+import ChatInterface from './components/ChatInterface';
+import LiveMode from './components/LiveMode';
+import ImageGenerator from './components/ImageGenerator';
+import TemporaryChat from './components/TemporaryChat';
+import { AppMode } from './types';
+import { MessageSquare, Mic, Image as ImageIcon, BrainCircuit, Activity, Zap } from 'lucide-react';
+
+const App: React.FC = () => {
+  const [activeMode, setActiveMode] = useState<AppMode>(AppMode.NEURAL_HUB);
+  const [isTempChatOpen, setIsTempChatOpen] = useState(false);
+
+  // Navigation Button Component
+  const NavButton = ({ mode, icon: Icon, label, color }: { mode: AppMode, icon: any, label: string, color: string }) => (
+    <button
+      onClick={() => setActiveMode(mode)}
+      className={`relative group flex flex-col items-center gap-3 p-6 rounded-2xl border transition-all duration-300 ${
+        activeMode === mode 
+          ? `bg-${color}-500/20 border-${color}-500 text-white scale-105 shadow-[0_0_30px_rgba(0,0,0,0.5)]`
+          : 'bg-black/30 border-white/10 text-gray-400 hover:border-white/30 hover:text-white hover:bg-black/50'
+      }`}
+    >
+      <div className={`p-4 rounded-full bg-white/5 group-hover:bg-${color}-500/20 transition-colors`}>
+        <Icon size={32} className={`group-hover:text-${color}-400 transition-colors`} />
+      </div>
+      <span className="font-space font-medium tracking-wide">{label}</span>
+      
+      {/* Connector Line (Visual only) */}
+      <div className={`absolute -bottom-8 left-1/2 w-px h-8 bg-gradient-to-b from-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity`} />
+    </button>
+  );
+
+  return (
+    <div className="relative w-screen h-screen overflow-hidden text-white flex flex-col">
+      <NeuronBackground />
+
+      {/* Top Navigation Bar */}
+      <nav className="z-40 px-6 py-4 flex items-center justify-between border-b border-white/10 bg-black/20 backdrop-blur-sm">
+        <div 
+            className="flex items-center gap-3 cursor-pointer group"
+            onClick={() => setActiveMode(AppMode.NEURAL_HUB)}
+        >
+          <div className="relative">
+            <BrainCircuit className="text-cyan-400 group-hover:animate-pulse" size={32} />
+            <div className="absolute inset-0 bg-cyan-400 blur-lg opacity-20"></div>
+          </div>
+          <h1 className="text-xl font-bold tracking-widest text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-500">
+            NEURAL NEXUS
+          </h1>
+        </div>
+        
+        <div className="flex items-center gap-4">
+             {/* Mini Nav for quick switching */}
+             {(activeMode !== AppMode.NEURAL_HUB) && (
+                <button 
+                    onClick={() => setActiveMode(AppMode.NEURAL_HUB)}
+                    className="text-xs font-mono text-gray-500 hover:text-cyan-400 uppercase border border-white/10 px-3 py-1 rounded transition-colors"
+                >
+                    Hub
+                </button>
+             )}
+             
+             {/* Temporary Chat Toggle */}
+             <button
+                onClick={() => setIsTempChatOpen(true)}
+                className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border border-yellow-500/30 text-yellow-400/80 hover:text-yellow-300 hover:bg-yellow-500/10 hover:border-yellow-500/60 transition-all ${isTempChatOpen ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}
+             >
+                <Zap size={16} />
+                <span className="text-xs font-bold uppercase tracking-wider">Quick Assist</span>
+             </button>
+        </div>
+      </nav>
+
+      {/* Main Content Area */}
+      <main className={`flex-1 relative p-6 overflow-hidden transition-all duration-300 ${isTempChatOpen ? 'mr-96' : ''}`}>
+        
+        {/* HUB VIEW */}
+        {activeMode === AppMode.NEURAL_HUB && (
+          <div className="h-full flex items-center justify-center animate-in fade-in zoom-in duration-500">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-5xl w-full">
+              <NavButton mode={AppMode.CHAT} icon={MessageSquare} label="Omni Chat" color="cyan" />
+              <NavButton mode={AppMode.DEEP_THINK} icon={BrainCircuit} label="Deep Reason" color="purple" />
+              <NavButton mode={AppMode.LIVE_VOICE} icon={Mic} label="Live Voice" color="red" />
+              <div className="md:col-span-3 flex justify-center">
+                 <div className="w-1/3">
+                    <NavButton mode={AppMode.IMAGE_STUDIO} icon={ImageIcon} label="Image Studio" color="pink" />
+                 </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* FEATURE VIEWS */}
+        {activeMode === AppMode.CHAT && (
+          <div className="h-full max-w-5xl mx-auto animate-in slide-in-from-right duration-300">
+            <ChatInterface mode={AppMode.CHAT} onModeChange={setActiveMode} />
+          </div>
+        )}
+
+        {activeMode === AppMode.DEEP_THINK && (
+          <div className="h-full max-w-5xl mx-auto animate-in slide-in-from-bottom duration-300">
+            <ChatInterface mode={AppMode.DEEP_THINK} onModeChange={setActiveMode} />
+          </div>
+        )}
+
+        {activeMode === AppMode.LIVE_VOICE && (
+          <div className="h-full max-w-4xl mx-auto animate-in fade-in duration-500">
+            <LiveMode />
+          </div>
+        )}
+
+        {activeMode === AppMode.IMAGE_STUDIO && (
+          <div className="h-full max-w-6xl mx-auto animate-in zoom-in-95 duration-300">
+            <ImageGenerator />
+          </div>
+        )}
+
+      </main>
+
+      {/* Temporary Chat Sidebar */}
+      <TemporaryChat isOpen={isTempChatOpen} onClose={() => setIsTempChatOpen(false)} />
+
+      {/* Footer Status */}
+      <footer className="px-6 py-2 border-t border-white/5 bg-black/40 text-xs text-gray-500 flex justify-between items-center z-30">
+        <div className="flex items-center gap-2">
+            <Activity size={12} className="text-green-500" />
+            <span>System Operational</span>
+        </div>
+        <div>
+            Unified Model: Gemini 2.5/3.0
+        </div>
+      </footer>
+    </div>
+  );
+};
+
+export default App;
