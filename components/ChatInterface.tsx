@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Send, Image as ImageIcon, Loader2, Globe, MapPin, Cpu, Search } from 'lucide-react';
+import { Send, Image as ImageIcon, Loader2, Globe, MapPin, Cpu, Search, Mic, MicOff } from 'lucide-react';
 import { sendChatMessage } from '../services/geminiService';
 import { Message, AppMode } from '../types';
 
@@ -10,6 +10,7 @@ interface ChatInterfaceProps {
 
 const ChatInterface: React.FC<ChatInterfaceProps> = ({ mode, onModeChange }) => {
   const [input, setInput] = useState('');
+  const [isListening, setIsListening] = useState(false);
   
   // Initialize messages from localStorage or default
   const [messages, setMessages] = useState<Message[]>(() => {
@@ -27,6 +28,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ mode, onModeChange }) => 
   const [isLoading, setIsLoading] = useState(false);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const recognitionRef = useRef<any>(null);
 
   // Save to localStorage whenever messages change
   useEffect(() => {
@@ -37,8 +39,65 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ mode, onModeChange }) => 
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
+  // Speech Recognition Setup
+  useEffect(() => {
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (SpeechRecognition) {
+      recognitionRef.current = new SpeechRecognition();
+      recognitionRef.current.continuous = true;
+      recognitionRef.current.interimResults = true;
+
+      recognitionRef.current.onresult = (event: any) => {
+        let interimTranscript = '';
+        let finalTranscript = '';
+
+        for (let i = event.resultIndex; i < event.results.length; ++i) {
+          if (event.results[i].isFinal) {
+            finalTranscript += event.results[i][0].transcript;
+          } else {
+            interimTranscript += event.results[i][0].transcript;
+          }
+        }
+        
+        // Update input with results
+        if (finalTranscript) {
+          setInput(prev => prev + (prev ? ' ' : '') + finalTranscript);
+        }
+      };
+
+      recognitionRef.current.onerror = (event: any) => {
+        console.error('Speech recognition error', event.error);
+        setIsListening(false);
+      };
+
+      recognitionRef.current.onend = () => {
+        if (isListening) recognitionRef.current.start();
+      };
+    }
+
+    return () => {
+      if (recognitionRef.current) recognitionRef.current.stop();
+    };
+  }, []);
+
+  const toggleListening = () => {
+    if (isListening) {
+      recognitionRef.current?.stop();
+      setIsListening(false);
+    } else {
+      recognitionRef.current?.start();
+      setIsListening(true);
+    }
+  };
+
   const handleSend = async () => {
     if ((!input.trim() && !selectedImage) || isLoading) return;
+
+    // Stop listening on send
+    if (isListening) {
+      recognitionRef.current?.stop();
+      setIsListening(false);
+    }
 
     const userMsg: Message = {
       id: Date.now().toString(),
@@ -53,7 +112,6 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ mode, onModeChange }) => 
     setIsLoading(true);
 
     try {
-      // Determine Configuration based on Mode
       let model = 'gemini-2.5-flash';
       let thinkingBudget = 0;
       let useGrounding = false;
@@ -61,11 +119,9 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ mode, onModeChange }) => 
 
       if (mode === AppMode.DEEP_THINK) {
         model = 'gemini-3-pro-preview';
-        thinkingBudget = 32768; // Max thinking
+        thinkingBudget = 32768;
       } else if (mode === AppMode.CHAT) {
-         // Standard chat, maybe use grounding if user asks
          useGrounding = true;
-         // Simulate getting location
          location = { latitude: 37.7749, longitude: -122.4194 };
       }
 
@@ -205,11 +261,12 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ mode, onModeChange }) => 
                 </button>
             </div>
         )}
-        <div className="flex items-end gap-2 bg-slate-900/80 p-2 rounded-xl border border-white/10 focus-within:border-cyan-500/50 transition-colors">
+        <div className={`flex items-end gap-2 bg-slate-900/80 p-2 rounded-xl border transition-all duration-300 ${isListening ? 'border-cyan-500 shadow-[0_0_15px_rgba(6,182,212,0.3)]' : 'border-white/10'} focus-within:border-cyan-500/50`}>
           <label className="p-2 text-gray-400 hover:text-cyan-400 cursor-pointer transition-colors">
             <input type="file" accept="image/*" className="hidden" onChange={handleFileChange} />
             <ImageIcon size={20} />
           </label>
+          
           <textarea
             value={input}
             onChange={(e) => setInput(e.target.value)}
@@ -219,10 +276,23 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ mode, onModeChange }) => 
                     handleSend();
                 }
             }}
-            placeholder={mode === AppMode.DEEP_THINK ? "Ask a complex question for deep reasoning..." : "Ask anything..."}
+            placeholder={isListening ? "Listening..." : (mode === AppMode.DEEP_THINK ? "Ask a complex question..." : "Ask anything...")}
             className="flex-1 bg-transparent text-white placeholder-gray-500 outline-none resize-none max-h-32 py-2 min-h-[44px]"
             rows={1}
           />
+
+          <button
+            onClick={toggleListening}
+            className={`p-2 rounded-lg transition-all duration-300 relative ${
+                isListening 
+                ? 'text-red-400 bg-red-500/10' 
+                : 'text-gray-400 hover:text-cyan-400 hover:bg-white/5'
+            }`}
+          >
+            {isListening && <span className="absolute inset-0 rounded-lg animate-ping bg-red-400/20" />}
+            {isListening ? <MicOff size={20} /> : <Mic size={20} />}
+          </button>
+
           <button
             onClick={handleSend}
             disabled={(!input.trim() && !selectedImage) || isLoading}
@@ -231,6 +301,11 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ mode, onModeChange }) => 
             <Send size={20} />
           </button>
         </div>
+        {isListening && (
+            <div className="mt-2 text-[10px] text-cyan-400 font-mono tracking-widest uppercase text-center animate-pulse">
+                Neural Transcription Active
+            </div>
+        )}
       </div>
     </div>
   );
