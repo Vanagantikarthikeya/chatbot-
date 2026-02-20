@@ -3,6 +3,8 @@ import { Send, Image as ImageIcon, Loader2, Globe, MapPin, Cpu, Search, Mic, Mic
 import { sendChatMessage } from '../services/geminiService';
 import { Message, AppMode } from '../types';
 
+import ReactMarkdown from 'react-markdown';
+
 interface ChatInterfaceProps {
   mode: AppMode;
   onModeChange: (mode: AppMode) => void;
@@ -112,17 +114,26 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ mode, onModeChange }) => 
     setIsLoading(true);
 
     try {
-      let model = 'gemini-2.5-flash';
+      let model = 'gemini-3-flash-preview';
       let thinkingBudget = 0;
       let useGrounding = false;
       let location = undefined;
 
       if (mode === AppMode.DEEP_THINK) {
-        model = 'gemini-3-pro-preview';
+        model = 'gemini-3.1-pro-preview';
         thinkingBudget = 32768;
       } else if (mode === AppMode.CHAT) {
          useGrounding = true;
-         location = { latitude: 37.7749, longitude: -122.4194 };
+         // Try to get real location
+         try {
+            const pos = await new Promise<GeolocationPosition>((resolve, reject) => {
+                navigator.geolocation.getCurrentPosition(resolve, reject, { timeout: 5000 });
+            });
+            location = { latitude: pos.coords.latitude, longitude: pos.coords.longitude };
+         } catch (e) {
+            console.warn("Geolocation failed, using default", e);
+            location = { latitude: 37.7749, longitude: -122.4194 };
+         }
       }
 
       const response = await sendChatMessage(
@@ -205,8 +216,8 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ mode, onModeChange }) => 
               {msg.image && (
                 <img src={msg.image} alt="Upload" className="max-w-full h-48 object-cover rounded-lg mb-2 border border-white/10" />
               )}
-              <div className="whitespace-pre-wrap leading-relaxed text-sm md:text-base font-light">
-                {msg.text}
+              <div className="whitespace-pre-wrap leading-relaxed text-sm md:text-base font-light markdown-body">
+                <ReactMarkdown>{msg.text}</ReactMarkdown>
               </div>
               
               {/* Grounding Sources Display */}

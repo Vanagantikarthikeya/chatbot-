@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { motion, AnimatePresence } from 'motion/react';
 import NeuronBackground from './components/NeuronBackground';
 import ChatInterface from './components/ChatInterface';
 import LiveMode from './components/LiveMode';
@@ -50,7 +51,9 @@ const NavButton = ({
   const classes = COLOR_CLASSES[color];
 
   return (
-    <button
+    <motion.button
+      whileHover={{ scale: 1.02 }}
+      whileTap={{ scale: 0.98 }}
       onClick={() => setActiveMode(mode)}
       className={`relative group flex flex-col items-center gap-3 p-6 rounded-2xl border transition-all duration-300 ${
         isActive 
@@ -65,7 +68,7 @@ const NavButton = ({
       
       {/* Visual Connector Line */}
       <div className={`absolute -bottom-8 left-1/2 w-px h-8 bg-gradient-to-b from-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity`} />
-    </button>
+    </motion.button>
   );
 };
 
@@ -115,46 +118,78 @@ const App: React.FC = () => {
       {/* Main Content Area */}
       <main className={`flex-1 relative p-6 overflow-hidden transition-all duration-300 z-10 ${isTempChatOpen ? 'mr-96' : ''}`}>
         
-        {/* HUB VIEW */}
-        {activeMode === AppMode.NEURAL_HUB && (
-          <div className="h-full flex items-center justify-center animate-fade-in">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-5xl w-full">
-              <NavButton mode={AppMode.CHAT} activeMode={activeMode} setActiveMode={setActiveMode} icon={MessageSquare} label="Omni Chat" color="cyan" />
-              <NavButton mode={AppMode.DEEP_THINK} activeMode={activeMode} setActiveMode={setActiveMode} icon={BrainCircuit} label="Deep Reason" color="purple" />
-              <NavButton mode={AppMode.LIVE_VOICE} activeMode={activeMode} setActiveMode={setActiveMode} icon={Mic} label="Live Voice" color="red" />
-              <div className="md:col-span-3 flex justify-center">
-                 <div className="w-full md:w-1/3">
-                    <NavButton mode={AppMode.IMAGE_STUDIO} activeMode={activeMode} setActiveMode={setActiveMode} icon={ImageIcon} label="Image Studio" color="pink" />
-                 </div>
+        <AnimatePresence mode="wait">
+          {/* HUB VIEW */}
+          {activeMode === AppMode.NEURAL_HUB && (
+            <motion.div 
+              key="hub"
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 1.05 }}
+              className="h-full flex items-center justify-center"
+            >
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-5xl w-full">
+                <NavButton mode={AppMode.CHAT} activeMode={activeMode} setActiveMode={setActiveMode} icon={MessageSquare} label="Omni Chat" color="cyan" />
+                <NavButton mode={AppMode.DEEP_THINK} activeMode={activeMode} setActiveMode={setActiveMode} icon={BrainCircuit} label="Deep Reason" color="purple" />
+                <NavButton mode={AppMode.LIVE_VOICE} activeMode={activeMode} setActiveMode={setActiveMode} icon={Mic} label="Live Voice" color="red" />
+                <div className="md:col-span-3 flex justify-center">
+                   <div className="w-full md:w-1/3">
+                      <NavButton mode={AppMode.IMAGE_STUDIO} activeMode={activeMode} setActiveMode={setActiveMode} icon={ImageIcon} label="Image Studio" color="pink" />
+                   </div>
+                </div>
               </div>
-            </div>
-          </div>
-        )}
+            </motion.div>
+          )}
 
-        {/* FEATURE VIEWS */}
-        {activeMode === AppMode.CHAT && (
-          <div className="h-full max-w-5xl mx-auto animate-fade-in">
-            <ChatInterface mode={AppMode.CHAT} onModeChange={setActiveMode} />
-          </div>
-        )}
+          {/* FEATURE VIEWS */}
+          {activeMode === AppMode.CHAT && (
+            <motion.div 
+              key="chat"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              className="h-full max-w-5xl mx-auto"
+            >
+              <ChatInterface mode={AppMode.CHAT} onModeChange={setActiveMode} />
+            </motion.div>
+          )}
 
-        {activeMode === AppMode.DEEP_THINK && (
-          <div className="h-full max-w-5xl mx-auto animate-fade-in">
-            <ChatInterface mode={AppMode.DEEP_THINK} onModeChange={setActiveMode} />
-          </div>
-        )}
+          {activeMode === AppMode.DEEP_THINK && (
+            <motion.div 
+              key="think"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              className="h-full max-w-5xl mx-auto"
+            >
+              <ChatInterface mode={AppMode.DEEP_THINK} onModeChange={setActiveMode} />
+            </motion.div>
+          )}
 
-        {activeMode === AppMode.LIVE_VOICE && (
-          <div className="h-full max-w-4xl mx-auto animate-fade-in">
-            <LiveMode />
-          </div>
-        )}
+          {activeMode === AppMode.LIVE_VOICE && (
+            <motion.div 
+              key="live"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              className="h-full max-w-4xl mx-auto"
+            >
+              <LiveMode />
+            </motion.div>
+          )}
 
-        {activeMode === AppMode.IMAGE_STUDIO && (
-          <div className="h-full max-w-6xl mx-auto animate-fade-in">
-            <ImageGenerator />
-          </div>
-        )}
+          {activeMode === AppMode.IMAGE_STUDIO && (
+            <motion.div 
+              key="image"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              className="h-full max-w-6xl mx-auto"
+            >
+              <ImageGenerator />
+            </motion.div>
+          )}
+        </AnimatePresence>
 
       </main>
 
@@ -168,7 +203,7 @@ const App: React.FC = () => {
             <span>System Operational</span>
         </div>
         <div>
-            Unified Model: Gemini 2.5/3.0
+            Unified Model: Gemini 3.1 Pro / 3.0 Flash
         </div>
       </footer>
     </div>

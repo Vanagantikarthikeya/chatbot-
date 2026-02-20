@@ -52,7 +52,7 @@ const TemporaryChat: React.FC<TemporaryChatProps> = ({ isOpen, onClose }) => {
       // Use Flash for temporary chat (fast, lightweight)
       const response = await sendChatMessage(
         userMsg.text,
-        'gemini-2.5-flash',
+        'gemini-3-flash-preview',
         messages,
         undefined, // no image support in temp chat for simplicity
         false // no grounding in temp chat for speed
